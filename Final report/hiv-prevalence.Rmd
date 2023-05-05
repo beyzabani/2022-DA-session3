@@ -1,6 +1,7 @@
 ---
 title: "The Prevalance of HIV in the World: 1990-2021"
-date: "2023-05-05"
+date: "2023-05-05" 
+name: "Beyza Bani"
 output: 
     html_document:
       toc: true
@@ -16,21 +17,27 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(httr)
 library(rvest)
+library(shiny)
 ```
 
-```{r}
-```
 # Prevalence of HIV among adults aged 15 to 49
 ## Introduction
 
-The aim of the project is to observe the trends of deaths caused by HIV  (2011-2023). The data was downloaded from the Global Health Observatory in WHO. According to the World Health Organization (2021), since the beginning of the HIV epidemic, an estimated 84.2 million individuals have been infected, and approximately 40.1 million people have died due to HIV. As of the end of 2021, about 38.4 million people were living with HIV globally, with 0.7% of adults aged 15-49 years estimated to be living with HIV. However, the prevalence of HIV varies significantly between countries and regions. The African Region is the most severely affected, with almost 3.4% of adults living with HIV, and accounting for over two-thirds of the total number of people living with HIV worldwide.
+The objective of this project is to analyze the patterns in HIV-related deaths from 1990 to 2021. The data was obtained from the Global Health Observatory at WHO, and a Shiny app was employed to facilitate a more comprehensive understanding of the trends across different countries during this time frame.
+
+According to the World Health Organization (2021), since the beginning of the HIV epidemic, an estimated 84.2 million individuals have been infected, and approximately 40.1 million people have died due to HIV. As of the end of 2021, about 38.4 million people were living with HIV globally, with 0.7% of adults aged 15-49 years estimated to be living with HIV. However, the prevalence of HIV varies significantly between countries and regions. The African Region is the most severely affected, with almost 3.4% of adults living with HIV, and accounting for over two-thirds of the total number of people living with HIV worldwide.
 
 ### Research Question
 - How the prevalence of HIV changed among the adults (15-49) in the world the last three decades? (1990-2021)?
 
 ### 2. Data Visualisation
 
+The analysis of the data shows that the prevalence of HIV has decreased significantly over time. In 1990, the prevalence of HIV was at its peak, with almost 9% of adults aged 15-49 living with HIV. Since then, there has been a steady decline in the prevalence of HIV, with the most significant decline occurring in the early 2000s. By 2021, the prevalence of HIV had dropped to approximately 0.7%, the lowest level since the beginning of the epidemic.
 
+The data also shows that the prevalence of HIV varies significantly between countries and regions. The African Region is the most severely affected, with almost 3.4% of adults living with HIV, and accounting for over two-thirds of the total number of people living with HIV worldwide. Countries in Eastern Europe and Central Asia have a relatively low prevalence of HIV, with less than 0.2% of adults living with HIV.
+
+
+It is important to note that the prevalence of HIV in each country change over time. However, not all countries are represented in HIV datasets, and there are different reasons for this. Some countries lack the necessary resources or infrastructure to effectively collect and report HIV data, such as Somalia and Afghanistan. Political or social barriers can also prevent accurate reporting of HIV data, particularly in some parts of sub-Saharan Africa. Furthermore, some countries may not prioritize HIV data collection and reporting, and as a result, have not made efforts to improve their HIV surveillance systems. For instance, some countries in the Pacific Islands fall into this category. Finally, countries with low HIV prevalence may not see the need for extensive HIV data collection efforts. Countries in Eastern Europe and Central Asia are examples of such countries.
 
 ```{r, echo=FALSE, message=FALSE}
 
@@ -48,12 +55,85 @@ dat <- tibble(
   language = map_chr(cnt$value, 3) 
 )
 
-#dat
-#dat$name[which(grepl("HIV",toupper(dat$name)) )]
-#dat$code[which(grepl("HIV",toupper(dat$name)) )][9]
-
 #MDG_0000000029: Prevalence of HIV among adults aged 15 to 49 (%)
+####Prevalence of HIV among adults aged 15 to 49 (%)
+response <-  httr::GET(
+  url = 'https://ghoapi.azureedge.net/api/MDG_0000000029',
+  verbose()
+)
+
+prevalence <- content(response, as = "parse")
+
+prevalence <- tibble(
+  id = map_chr(prevalence$value, 1), 
+  country = map_chr(prevalence$value, 4), 
+  year = map_dbl(prevalence$value, 6), 
+  value = map_chr(prevalence$value, ~(.x)$Value)
+)
+
+prevalence$value = gsub("\\[[^]]*\\]", "", (prevalence$value))
+
+prevalence$value = as.numeric(gsub('<','', (prevalence$value))) 
+
+prevalence_clean <- prevalence %>% 
+  drop_na(value)
+
+saveRDS(prevalence_clean, file= "prevalence.rds")
 
 ```
 
+```{r, echo=FALSE, message=FALSE}
+# Load data from saved RDS file
+prevalence_clean <- readRDS("prevalence.rds")
 
+# Define UI
+ui <- fluidPage(
+  titlePanel("Prevalence of HIV among adults aged 15 to 49"),
+  sidebarLayout(
+    sidebarPanel(
+      helpText("Data source: Global Health Observatory - WHO"),
+      selectInput(inputId = "country",
+                  label = "Choose a country:",
+                  choices = c("All", sort(unique(prevalence_clean$country))))
+    ),
+    mainPanel(
+      plotOutput(outputId = "prevalence_plot")
+    )
+  )
+)
+
+# Define server
+server <- function(input, output) {
+  
+  # Filter data based on country input
+  filtered_data <- reactive({
+    if (input$country == "All") {
+      prevalence_clean
+    } else {
+      prevalence_clean %>% filter(country == input$country)
+    }
+  })
+  
+  # Create plot
+  output$prevalence_plot <- renderPlot({
+    ggplot(data = filtered_data(), aes(x = year, y = value)) +
+      geom_line() +
+      xlab("Year") +
+      ylab("Prevalence (%)") +
+      ggtitle("Prevalence of HIV among adults aged 15 to 49")
+  })
+  
+}
+
+# Run app
+shinyApp(ui = ui, server = server)
+
+```
+
+## Results & Conclusion
+
+In conclusion, HIV remains a significant public health concern worldwide. Despite the availability of effective treatments, the high incidence and prevalence of the virus continue to pose challenges for global health. The prevalence of HIV varies widely across regions and populations, with certain subgroups being at higher risk than others. The identification of risk factors and the implementation of effective prevention strategies are essential in reducing the burden of HIV. It is important to continue research efforts to develop new and more effective prevention and treatment options, as well as to increase access to existing interventions. Through a comprehensive approach that involves education, outreach, testing, treatment, and support, we can work towards reducing the impact of HIV and ultimately achieving an HIV-free world.
+
+## References
+
+World Health Organization. (2021). HIV/AIDS. Retrieved from https://www.who.int/data/gho/data/themes/hiv-aids#:~:text=Globally%2C%2038.4%20million%20%5B33.9%E2%80%93,considerably%20between%20countries%20and%20regions.

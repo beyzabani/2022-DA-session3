@@ -28,9 +28,9 @@ The aim of the project is to observe the trends of deaths caused by HIV  (2011-2
 ### Research Question
 - How the prevalence of HIV changed among the adults (15-49) in the world the last three decades? (1990-2021)?
 
-### 2. Data Visualisation 1: Number of headlines by the dates (01-01-2011 to 15-04-2023)
+### 2. Data Visualisation
 
-The visualisation illustrates the distribution of the number of headlines throughout the period of interest.Unsurprisingly the numbers are highest from 2014_2016 at the peak of the war.
+
 
 ```{r, echo=FALSE, message=FALSE}
 
@@ -49,8 +49,8 @@ dat <- tibble(
 )
 
 #dat
-dat$name[which(grepl("HIV",toupper(dat$name)) )]
-dat$code[which(grepl("HIV",toupper(dat$name)) )][9]
+#dat$name[which(grepl("HIV",toupper(dat$name)) )]
+#dat$code[which(grepl("HIV",toupper(dat$name)) )][9]
 
 #MDG_0000000029: Prevalence of HIV among adults aged 15 to 49 (%)
 

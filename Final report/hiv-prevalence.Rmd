@@ -1,0 +1,59 @@
+---
+title: "The Prevalance of HIV in the World: 1990-2021"
+date: "2023-05-05"
+output: 
+    html_document:
+      toc: true
+      toc_float: true
+      theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Global Health Observatory - WHO
+# https://www.who.int/data/gho/info/gho-odata-api
+#install.packages("shiny")
+library(tidyverse)
+library(httr)
+library(rvest)
+```
+
+```{r}
+```
+# Prevalence of HIV among adults aged 15 to 49
+## Introduction
+
+The aim of the project is to observe the trends of deaths caused by HIV  (2011-2023). The data was downloaded from the Global Health Observatory in WHO. According to the World Health Organization (2021), since the beginning of the HIV epidemic, an estimated 84.2 million individuals have been infected, and approximately 40.1 million people have died due to HIV. As of the end of 2021, about 38.4 million people were living with HIV globally, with 0.7% of adults aged 15-49 years estimated to be living with HIV. However, the prevalence of HIV varies significantly between countries and regions. The African Region is the most severely affected, with almost 3.4% of adults living with HIV, and accounting for over two-thirds of the total number of people living with HIV worldwide.
+
+### Research Question
+- How the prevalence of HIV changed among the adults (15-49) in the world the last three decades? (1990-2021)?
+
+### 2. Data Visualisation 1: Number of headlines by the dates (01-01-2011 to 15-04-2023)
+
+The visualisation illustrates the distribution of the number of headlines throughout the period of interest.Unsurprisingly the numbers are highest from 2014_2016 at the peak of the war.
+
+```{r, echo=FALSE, message=FALSE}
+
+# Get the list with all the variables that are available (indicators)
+#  https://www.who.int/data/gho/data/indicators
+response <-  httr::GET(
+  url = 'https://ghoapi.azureedge.net/api/Indicator',
+  verbose()
+)
+
+cnt <- content(response, as = "parsed")
+dat <- tibble(
+  code = map_chr(cnt$value, 1), 
+  name = map_chr(cnt$value, 2), 
+  language = map_chr(cnt$value, 3) 
+)
+
+#dat
+dat$name[which(grepl("HIV",toupper(dat$name)) )]
+dat$code[which(grepl("HIV",toupper(dat$name)) )][9]
+
+#MDG_0000000029: Prevalence of HIV among adults aged 15 to 49 (%)
+
+```
+
+
